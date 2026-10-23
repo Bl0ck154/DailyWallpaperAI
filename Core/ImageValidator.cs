@@ -8,8 +8,11 @@ public static class ImageValidator
 
     public static void ValidatePng(string path)
     {
+        var size = new FileInfo(path).Length;
+        if (size is < 57 or > 24 * 1024 * 1024)
+            throw new InvalidDataException("Image generator returned an invalid or oversized PNG.");
         var bytes = File.ReadAllBytes(path);
-        if (bytes.LongLength > 24 * 1024 * 1024 || bytes.Length < 57 ||
+        if (bytes.Length < 57 ||
             !bytes.AsSpan(0, 8).SequenceEqual(PngSignature))
             throw new InvalidDataException("Image generator did not produce a valid PNG.");
         var width = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(16, 4));

@@ -97,3 +97,16 @@ Important limitations:
 Design and subprocess flow informed by WallTrek (MIT); see
 `LICENSE-WALLTREK-NOTICE.txt`. This project does **not** ship third-party helper
 source or authentication data.
+
+## Manual one-off prompts and gallery operations
+
+The Home page accepts an optional one-off prompt. A nonempty one-off prompt bypasses
+scenario rotation for that one run and does not consume a scenario variation. When
+reference photos are enabled, the same identity-preservation instruction and upload
+consent apply. A successful image is saved in the Gallery; an older image may be
+selected and deleted after confirmation. The most recently generated wallpaper is
+protected from accidental deletion.
+
+**Project status:** Windows CI verifies compilation and offline scenario behavior.
+Neither successful compilation nor a mock test establishes live Codex generation;
+that requires the installed helper and a signed-in Windows user.

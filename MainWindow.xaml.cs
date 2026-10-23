@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using DailyWallpaperAI.Core;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
+using ComboBox = System.Windows.Controls.ComboBox;
 
 namespace DailyWallpaperAI;
 
@@ -160,7 +161,8 @@ public partial class MainWindow : Window
             CapturePreferences();
             _store.Save(_settings);
             Status("Generating wallpaper via Codex…");
-            var result = await new GenerationService(_store).RunAsync(_settings, _generation.Token);
+            var oneOffPrompt = OneOffPromptBox.Text;
+            var result = await new GenerationService(_store).RunAsync(_settings, _generation.Token, oneOffPrompt);
             ShowPreview(result.SavedPath);
             RefreshGallery();
             Status(result.Applied ? "Generated and applied to desktop." : "Generated and saved to gallery.");
@@ -224,6 +226,32 @@ public partial class MainWindow : Window
             _settings.LastWallpaper = entry.Path;
             _store.Save(_settings);
             Status("Wallpaper applied.");
+        }
+        catch (Exception ex) { Error(ex); }
+    }
+
+    private void DeleteSelected_Click(object sender, RoutedEventArgs e)
+    {
+        if (GalleryList.SelectedItem is not GalleryEntry entry) { Status("Choose a wallpaper to delete."); return; }
+        if (string.Equals(Path.GetFullPath(entry.Path), _settings.LastWallpaper, StringComparison.OrdinalIgnoreCase))
+        {
+            Status("Cannot delete the last generated wallpaper. Apply a different wallpaper first.");
+            return;
+        }
+        var confirmation = System.Windows.MessageBox.Show(this,
+            $"Permanently delete {entry.Name}?", "Delete wallpaper",
+            MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirmation != MessageBoxResult.Yes) return;
+        try
+        {
+            var full = Path.GetFullPath(entry.Path);
+            var root = Path.GetFullPath(Paths.Wallpapers).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Refusing to delete a file outside the wallpaper gallery.");
+            File.Delete(full);
+            RefreshGallery();
+            ShowPreview(_settings.LastWallpaper);
+            Status("Wallpaper deleted.");
         }
         catch (Exception ex) { Error(ex); }
     }

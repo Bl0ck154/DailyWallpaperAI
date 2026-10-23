@@ -56,6 +56,8 @@
               <StackPanel>
                 <TextBlock Text="Create a wallpaper" Style="{StaticResource SectionTitle}"/>
                 <TextBlock x:Name="ActiveScenarioLabel" Text="" Style="{StaticResource Subtitle}"/>
+                <TextBlock Text="One-off prompt (optional — leave blank to use the active scenario)"/>
+                <TextBox x:Name="OneOffPromptBox" AcceptsReturn="True" TextWrapping="Wrap" Height="68" VerticalScrollBarVisibility="Auto"/>
                 <StackPanel Orientation="Horizontal">
                   <Button x:Name="GenerateButton" Background="{StaticResource Accent}" FontWeight="Bold" Content="✦  Generate now" Click="Generate_Click"/>
                   <Button x:Name="CancelButton" Content="Cancel" Click="Cancel_Click" IsEnabled="False"/>
@@ -116,6 +118,7 @@
             <Button Content="Set selected as wallpaper" Click="ApplySelected_Click"/>
             <Button Content="Open folder" Click="OpenFolder_Click"/>
             <Button Content="Refresh" Click="RefreshGallery_Click"/>
+            <Button Content="Delete selected" Click="DeleteSelected_Click"/>
           </StackPanel>
         </Grid>
       </TabItem>

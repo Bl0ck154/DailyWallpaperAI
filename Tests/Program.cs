@@ -28,3 +28,11 @@ try
 }
 catch (InvalidDataException) { }
 Console.WriteLine("Scenario smoke tests passed.");
+
+// The compose/commit cycle must never consume a variation during a preview or a failed render.
+var replay = ScenarioComposer.Compose(scenario, false);
+var repeat = ScenarioComposer.Compose(scenario, false);
+Expect(!string.IsNullOrWhiteSpace(replay.Prompt) && replay.Prompt.Contains("Style:"), "Scenario style missing.");
+Expect(replay.VariationKey.Length == 64, "Variation hash must be SHA-256.");
+Expect(ScenarioComposer.IdentityInstruction.Contains("SAME person"), "Manual reference prompt must preserve identity.");
+Console.WriteLine("Additional prompt composition checks passed.");

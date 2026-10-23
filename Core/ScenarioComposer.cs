@@ -6,6 +6,8 @@ namespace DailyWallpaperAI.Core;
 
 public static partial class ScenarioComposer
 {
+    public const string IdentityInstruction = "Include the SAME person from the supplied reference photographs prominently in the scene. Preserve recognizable facial identity, face shape, eyes, natural proportions and age. Do not replace the person with a lookalike.";
+
     [GeneratedRegex(@"\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}")]
     private static partial Regex TokenRegex();
 
@@ -40,7 +42,7 @@ public static partial class ScenarioComposer
         });
         var parts = new List<string>();
         if (hasIdentityPhotos)
-            parts.Add("Include the SAME person from the supplied reference photographs prominently in the scene. Preserve recognizable facial identity, face shape, eyes, natural proportions and age. Do not replace the person with a lookalike.");
+            parts.Add(IdentityInstruction);
         parts.Add(prompt);
         if (!string.IsNullOrWhiteSpace(scenario.Style)) parts.Add("Style: " + scenario.Style.Trim());
         if (!string.IsNullOrWhiteSpace(scenario.Avoid)) parts.Add("Avoid: " + scenario.Avoid.Trim());
