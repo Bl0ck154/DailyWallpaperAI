@@ -7,6 +7,7 @@ using DailyWallpaperAI.Core;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
 using ComboBox = System.Windows.Controls.ComboBox;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace DailyWallpaperAI;
 
