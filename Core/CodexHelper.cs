@@ -21,9 +21,9 @@ public sealed class CodexHelper
             return path;
         }
         var dirs = (Environment.GetEnvironmentVariable("PATH") ?? "")
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.Trim().Trim('"'))
-            .Append(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin"));
+            .Concat(new[] { Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin") });
         foreach (var dir in dirs)
         {
             foreach (var name in new[] { "codex-imagegen.exe", "codex-imagegen-cli.exe" })
@@ -60,7 +60,12 @@ public sealed class CodexHelper
             throw new InvalidDataException("Prompt is empty or too long.");
         var executable = Resolve(configured);
         var promptFile = Path.Combine(Path.GetDirectoryName(destination)!, "prompt.txt");
+#if NETFRAMEWORK
+        ct.ThrowIfCancellationRequested();
+        File.WriteAllText(promptFile, prompt, new UTF8Encoding(false));
+#else
         await File.WriteAllTextAsync(promptFile, prompt, new UTF8Encoding(false), ct);
+#endif
         var args = new List<string>
         {
             photoFiles.Count > 0 ? "edit" : "generate",
@@ -108,7 +113,11 @@ public sealed class CodexHelper
             RedirectStandardError = true,
             WorkingDirectory = workingDirectory
         };
+#if NETFRAMEWORK
+        start.Arguments = ClassicCompat.BuildCommandLine(args);
+#else
         foreach (var arg in args) start.ArgumentList.Add(arg);
+#endif
         using var process = new Process { StartInfo = start };
         try { if (!process.Start()) throw new CodexFailure("Unable to launch codex-imagegen.exe."); }
         catch (Win32Exception) { throw new CodexFailure("Unable to launch codex-imagegen.exe."); }
@@ -118,7 +127,11 @@ public sealed class CodexHelper
         var errTask = ReadBoundedAsync(process.StandardError);
         try
         {
+#if NETFRAMEWORK
+            await ClassicCompat.WaitForExitAsync(process, timeoutCts.Token);
+#else
             await process.WaitForExitAsync(timeoutCts.Token);
+#endif
             var output = await outTask;
             var error = await errTask;
             // Discard raw stdout and stderr immediately after classifying them.
@@ -126,9 +139,27 @@ public sealed class CodexHelper
         }
         catch (OperationCanceledException)
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            try
+            {
+                if (!process.HasExited)
+                {
+#if NETFRAMEWORK
+                    process.Kill();
+#else
+                    process.Kill(entireProcessTree: true);
+#endif
+                }
+            }
             catch (InvalidOperationException) { }
-            try { await process.WaitForExitAsync(CancellationToken.None); } catch (InvalidOperationException) { }
+            try
+            {
+#if NETFRAMEWORK
+                process.WaitForExit(1000);
+#else
+                await process.WaitForExitAsync(CancellationToken.None);
+#endif
+            }
+            catch (InvalidOperationException) { }
             throw ct.IsCancellationRequested ? new OperationCanceledException(ct) :
                 new TimeoutException("Image generation exceeded its time limit.");
         }
@@ -139,7 +170,7 @@ public sealed class CodexHelper
         var buffer = new char[4096];
         var captured = new StringBuilder();
         int count;
-        while ((count = await reader.ReadAsync(buffer)) > 0)
+        while ((count = await reader.ReadAsync(buffer, 0, buffer.Length)) > 0)
             if (captured.Length < 1024) captured.Append(buffer, 0, Math.Min(count, 1024 - captured.Length));
         return captured.ToString();
     }
