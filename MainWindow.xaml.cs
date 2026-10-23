@@ -291,7 +291,14 @@ public partial class MainWindow : Window
     private void OpenFolder_Click(object sender, RoutedEventArgs e)
     {
         Directory.CreateDirectory(Paths.Wallpapers);
+        #if NETFRAMEWORK
+        Process.Start(new ProcessStartInfo("explorer.exe")
+        {
+            UseShellExecute = true, Arguments = ClassicCompat.BuildCommandLine(new[] { Paths.Wallpapers })
+        });
+#else
         Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true, ArgumentList = { Paths.Wallpapers } });
+#endif
     }
 
     private void BrowseHelper_Click(object sender, RoutedEventArgs e)
