@@ -20,7 +20,7 @@ public static partial class ScenarioComposer
         var places = ReadChoices(scenario.Places);
         var moods = ReadChoices(scenario.Moods);
         if (places.Length * moods.Length > 4096) throw new InvalidDataException("Too many possible variations.");
-        var tokens = TokenRegex().Matches(scenario.Template).Select(x => x.Groups[1].Value).Distinct().ToArray();
+        var tokens = TokenRegex().Matches(scenario.Template).Cast<Match>().Select(x => x.Groups[1].Value).Distinct().ToArray();
         if (tokens.Any(x => x is not ("place" or "mood")))
             throw new InvalidDataException("Supported variables: {{place}} and {{mood}}.");
         if (tokens.Contains("place") && places.Length == 1 && places[0] == "" ||
