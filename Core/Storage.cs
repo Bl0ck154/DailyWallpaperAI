@@ -1,4 +1,8 @@
+#if NETFRAMEWORK
+using Newtonsoft.Json;
+#else
 using System.Text.Json;
+#endif
 
 namespace DailyWallpaperAI.Core;
 
@@ -12,7 +16,9 @@ public static class Paths
 
 public sealed class SettingsStore
 {
+#if !NETFRAMEWORK
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
+#endif
     private readonly object _sync = new();
 
     public WallpaperSettings Load()
@@ -20,13 +26,22 @@ public sealed class SettingsStore
         if (!File.Exists(Paths.Settings)) return WallpaperSettings.CreateDefault();
         try
         {
+#if NETFRAMEWORK
+            var settings = JsonConvert.DeserializeObject<WallpaperSettings>(File.ReadAllText(Paths.Settings))
+                ?? throw new InvalidDataException("Empty settings document");
+#else
             var settings = JsonSerializer.Deserialize<WallpaperSettings>(File.ReadAllText(Paths.Settings), Options)
                 ?? throw new InvalidDataException("Empty settings document");
+#endif
             if (settings.SchemaVersion != 1 || settings.Scenarios is null || settings.References is null)
                 throw new InvalidDataException("Unsupported settings format");
             return settings;
         }
-        catch (JsonException)
+#if NETFRAMEWORK
+        catch (Newtonsoft.Json.JsonException)
+#else
+        catch (System.Text.Json.JsonException)
+#endif
         {
             throw new InvalidDataException($"Settings are corrupted. Backup or repair: {Paths.Settings}");
         }
@@ -40,7 +55,11 @@ public sealed class SettingsStore
             var temp = Paths.Settings + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
+#if NETFRAMEWORK
+                File.WriteAllText(temp, JsonConvert.SerializeObject(settings, Formatting.Indented));
+#else
                 File.WriteAllText(temp, JsonSerializer.Serialize(settings, Options));
+#endif
                 // Atomic replacement when target exists: retain an automatic .bak.
                 if (File.Exists(Paths.Settings)) File.Replace(temp, Paths.Settings, Paths.Settings + ".bak");
                 else File.Move(temp, Paths.Settings);
@@ -71,7 +90,7 @@ public static class PhotoStore
     public static string GetPath(PhotoReference reference)
     {
         var file = reference.FileName;
-        if (file != Path.GetFileName(file) || file.Contains("..", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(file))
+        if (file != Path.GetFileName(file) || file.IndexOf("..", StringComparison.Ordinal) >= 0 || string.IsNullOrWhiteSpace(file))
             throw new InvalidDataException("Invalid reference path.");
         var full = Path.Combine(Paths.References, file);
         if (!File.Exists(full)) throw new FileNotFoundException("Reference image is missing.");
@@ -88,7 +107,14 @@ public static class AppLog
             Directory.CreateDirectory(Paths.Data);
             var log = Path.Combine(Paths.Data, "status.log");
             if (File.Exists(log) && new FileInfo(log).Length > 1_000_000)
+            {
+#if NETFRAMEWORK
+                if (File.Exists(log + ".old")) File.Delete(log + ".old");
+                File.Move(log, log + ".old");
+#else
                 File.Move(log, log + ".old", overwrite: true);
+#endif
+            }
             File.AppendAllText(log, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
         }
         catch (IOException) { }
