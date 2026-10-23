@@ -13,7 +13,7 @@ public partial class App : System.Windows.Application
         {
             var store = new SettingsStore();
             var settings = store.Load();
-            if (e.Args.Contains("--scheduled", StringComparer.OrdinalIgnoreCase))
+            if (e.Args.Any(x => string.Equals(x, "--scheduled", StringComparison.OrdinalIgnoreCase)))
             {
                 // The scheduler runs independently of the UI. No window or tray is created.
                 try
