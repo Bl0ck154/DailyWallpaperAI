@@ -86,7 +86,7 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                       </Border>
                       <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="DAILY" FontWeight="Bold" FontSize="18" LetterSpacing="0"/>
+                        <TextBlock Text="DAILY" FontWeight="Bold" FontSize="18"/>
                         <TextBlock Text="WALLPAPER STUDIO" Foreground="{StaticResource Muted}" FontSize="9" FontWeight="SemiBold"/>
                       </StackPanel>
                     </StackPanel>
@@ -453,7 +453,7 @@
                   </WrapPanel>
                   <Border Background="#242E2B" BorderBrush="#3A4B3A" BorderThickness="1"
                           CornerRadius="10" Padding="12" Margin="0,17,0,0">
-                    <CheckBox x:Name="ConsentCheck" TextBlock.TextWrapping="Wrap"
+                    <CheckBox x:Name="ConsentCheck"
                               Content="I agree to send my selected reference photos through the unofficial Codex helper."
                               Margin="0"/>
                   </Border>
