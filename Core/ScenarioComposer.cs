@@ -8,8 +8,10 @@ public static partial class ScenarioComposer
 {
     public const string IdentityInstruction = "Include the SAME person from the supplied reference photographs prominently in the scene. Preserve recognizable facial identity, face shape, eyes, natural proportions and age. Do not replace the person with a lookalike.";
 
-    [GeneratedRegex(@"\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}")]
-    private static partial Regex TokenRegex();
+    private static readonly Regex Tokens = new Regex(
+        @"\{\{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*\}\}",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static Regex TokenRegex() => Tokens;
 
     public static ComposedPrompt Compose(WallpaperScenario scenario, bool hasIdentityPhotos)
     {
@@ -18,7 +20,7 @@ public static partial class ScenarioComposer
         var places = ReadChoices(scenario.Places);
         var moods = ReadChoices(scenario.Moods);
         if (places.Length * moods.Length > 4096) throw new InvalidDataException("Too many possible variations.");
-        var tokens = TokenRegex().Matches(scenario.Template).Select(x => x.Groups[1].Value).Distinct().ToArray();
+        var tokens = TokenRegex().Matches(scenario.Template).Cast<Match>().Select(x => x.Groups[1].Value).Distinct().ToArray();
         if (tokens.Any(x => x is not ("place" or "mood")))
             throw new InvalidDataException("Supported variables: {{place}} and {{mood}}.");
         if (tokens.Contains("place") && places.Length == 1 && places[0] == "" ||
@@ -27,13 +29,13 @@ public static partial class ScenarioComposer
         if (!tokens.Contains("place")) places = [""];
         if (!tokens.Contains("mood")) moods = [""];
         var combos = (from p in places from m in moods select new { Place = p, Mood = m, Key = Hash(p + "\0" + m) }).ToArray();
-        var used = scenario.UsedVariations.ToHashSet(StringComparer.Ordinal);
+        var used = new HashSet<string>(scenario.UsedVariations, StringComparer.Ordinal);
         var options = combos.Where(x => !used.Contains(x.Key)).ToArray();
         if (options.Length == 0)
         {
             options = combos.Where(x => combos.Length == 1 || x.Key != scenario.LastVariation).ToArray();
         }
-        var selected = options[RandomNumberGenerator.GetInt32(options.Length)];
+        var selected = options[ClassicCompat.RandomInt(options.Length)];
         var prompt = TokenRegex().Replace(scenario.Template, x => x.Groups[1].Value switch
         {
             "place" => selected.Place,
@@ -58,8 +60,13 @@ public static partial class ScenarioComposer
     }
 
     private static string[] ReadChoices(string value) =>
-        (value ?? "").Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Take(100).DefaultIfEmpty("").ToArray();
+        (value ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim()).Where(x => x.Length > 0)
+        .Distinct(StringComparer.OrdinalIgnoreCase).Take(100).DefaultIfEmpty("").ToArray();
 
-    private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    private static string Hash(string value)
+    {
+        using (var sha = SHA256.Create())
+            return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(value))).Replace("-", "");
+    }
 }

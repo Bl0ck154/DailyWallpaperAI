@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../Core/ScenarioComposer.cs" Link="ScenarioComposer.cs" />
+    <Compile Include="../Core/ClassicCompat.cs" Link="ClassicCompat.cs" />
     <Compile Include="../Core/Models.cs" Link="Models.cs" />
   </ItemGroup>
 </Project>

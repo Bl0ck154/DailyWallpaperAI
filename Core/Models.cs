@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace DailyWallpaperAI.Core;
 
 public sealed class WallpaperSettings

@@ -13,10 +13,10 @@ public static class ScheduleService
         // Interactive user token: wallpaper changes must happen in the signed-in session.
         if (enabled)
         {
-            if (!TimeOnly.TryParseExact(time, "HH:mm", CultureInfo.InvariantCulture,
+            if (!DateTime.TryParseExact(time, "HH:mm", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out _))
                 throw new InvalidDataException("Daily time must be HH:mm (24-hour clock).");
-            var executable = Environment.ProcessPath
+            var executable = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName
                 ?? throw new InvalidOperationException("Cannot locate the application executable.");
             if (!Path.GetFileName(executable).Equals("DailyWallpaperAI.exe", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Publish the app before enabling the schedule.");
@@ -39,17 +39,36 @@ public static class ScheduleService
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardError = true, RedirectStandardOutput = true
         };
+#if NETFRAMEWORK
+        start.Arguments = ClassicCompat.BuildCommandLine(args);
+#else
         foreach (var arg in args) start.ArgumentList.Add(arg);
+#endif
         using var process = new Process { StartInfo = start };
         try { process.Start(); }
         catch (Win32Exception) { throw new CodexFailure("Windows Task Scheduler is unavailable."); }
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var outTask = process.StandardOutput.ReadToEndAsync();
         var errTask = process.StandardError.ReadToEndAsync();
-        try { await process.WaitForExitAsync(cts.Token); }
+        try
+        {
+#if NETFRAMEWORK
+            await ClassicCompat.WaitForExitAsync(process, cts.Token);
+#else
+            await process.WaitForExitAsync(cts.Token);
+#endif
+        }
         catch (OperationCanceledException)
         {
-            try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
+            try
+            {
+#if NETFRAMEWORK
+                process.Kill();
+#else
+                process.Kill(entireProcessTree: true);
+#endif
+            }
+            catch (InvalidOperationException) { }
             throw new CodexFailure("Task Scheduler did not respond in time.");
         }
         await Task.WhenAll(outTask, errTask);
