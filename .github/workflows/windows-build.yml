@@ -1,27 +1,101 @@
-name: Windows WPF build and smoke tests
+name: Windows WPF build and alpha release
+
 on:
   push:
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional alpha version (e.g. v0.1.0-alpha.1); blank builds only'
+        required: false
+        type: string
+
 permissions:
   contents: read
+
 jobs:
   windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
       - name: Scenario tests (offline, no credentials)
         run: dotnet run --project Tests/ScenarioSmokeTests.csproj --configuration Release
+
       - name: Build WPF application
         run: dotnet build DailyWallpaperAI.csproj --configuration Release
-      - name: Publish standalone Windows folder
-        run: dotnet publish DailyWallpaperAI.csproj -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -o dist/DailyWallpaperAI
-      - uses: actions/upload-artifact@v4
+
+      - name: Publish Lite (requires .NET 10 Desktop Runtime)
+        run: dotnet publish DailyWallpaperAI.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false -o dist/Lite
+
+      - name: Publish Portable (bundled .NET 10 Desktop Runtime)
+        run: dotnet publish DailyWallpaperAI.csproj -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -p:PublishSingleFile=false -o dist/Portable
+
+      - name: Package both portable folders
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          foreach ($flavour in @('Lite', 'Portable')) {
+            $folder = "dist/$flavour"
+            $exe = "$folder/DailyWallpaperAI.exe"
+            if (-not (Test-Path -LiteralPath $exe)) { throw "Missing executable: $exe" }
+            "Commit: $env:GITHUB_SHA" | Set-Content -LiteralPath "$folder/BUILD_INFO.txt"
+            $zip = "release/DailyWallpaperAI-$flavour-win-x64.zip"
+            Compress-Archive -Path "$folder/*" -DestinationPath $zip -CompressionLevel Optimal
+            if (-not (Test-Path -LiteralPath $zip)) { throw "Missing archive: $zip" }
+            $bytes = (Get-Item -LiteralPath $zip).Length
+            Write-Host "$zip ($([math]::Round($bytes / 1MB, 2)) MiB)"
+          }
+
+      - name: Upload both ZIP packages
+        uses: actions/upload-artifact@v4
         with:
-          name: DailyWallpaperAI-Windows-x64
-          path: dist/DailyWallpaperAI/
+          name: DailyWallpaperAI-Windows-x64-Packages
+          path: release/*.zip
           if-no-files-found: error
           retention-days: 7
+          compression-level: 0
+
+  release:
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && github.ref == 'refs/heads/main'
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: DailyWallpaperAI-Windows-x64-Packages
+          path: release
+
+      - name: Publish alpha GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]; then
+            echo "Only alpha tags like v0.1.0-alpha.1 are supported" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists: $TAG" >&2
+            exit 1
+          fi
+          test -s release/DailyWallpaperAI-Lite-win-x64.zip
+          test -s release/DailyWallpaperAI-Portable-win-x64.zip
+          gh release create "$TAG" \
+            release/DailyWallpaperAI-Lite-win-x64.zip \
+            release/DailyWallpaperAI-Portable-win-x64.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Daily Wallpaper AI $TAG (Alpha)" \
+            --prerelease \
+            --notes-file docs/ALPHA_RELEASE_NOTES.md
