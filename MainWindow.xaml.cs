@@ -206,14 +206,45 @@ public partial class MainWindow : Window
     private void RefreshGallery()
     {
         Directory.CreateDirectory(Paths.Wallpapers);
-        GalleryList.ItemsSource = Directory.EnumerateFiles(Paths.Wallpapers, "*.png")
+        var previous = (GalleryList.SelectedItem as GalleryEntry)?.Path;
+        var items = Directory.EnumerateFiles(Paths.Wallpapers, "*.png")
             .OrderByDescending(Path.GetFileName).Take(150)
             .Select(x => new GalleryEntry(Path.GetFileName(x), x)).ToList();
+        GalleryList.ItemsSource = items;
+        GalleryCountText.Text = items.Count == 0
+            ? "No wallpapers yet. Generate one from the Overview tab."
+            : items.Count == 1 ? "1 wallpaper saved locally." : $"{items.Count} wallpapers saved locally.";
+        GalleryList.SelectedItem = items.FirstOrDefault(x =>
+                string.Equals(x.Path, previous, StringComparison.OrdinalIgnoreCase))
+            ?? items.FirstOrDefault(x =>
+                string.Equals(x.Path, _settings.LastWallpaper, StringComparison.OrdinalIgnoreCase))
+            ?? items.FirstOrDefault();
+        if (items.Count == 0) GalleryPreviewImage.Source = null;
     }
 
     private void GalleryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (GalleryList.SelectedItem is GalleryEntry entry) ShowPreview(entry.Path);
+        if (GalleryPreviewImage is null) return;
+        if (GalleryList.SelectedItem is not GalleryEntry entry)
+        {
+            GalleryPreviewImage.Source = null;
+            return;
+        }
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(entry.Path, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            GalleryPreviewImage.Source = bitmap;
+        }
+        catch (Exception)
+        {
+            GalleryPreviewImage.Source = null;
+            Status("Could not preview this image.");
+        }
     }
     private void RefreshGallery_Click(object sender, RoutedEventArgs e) => RefreshGallery();
 
