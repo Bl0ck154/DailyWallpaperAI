@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Test scenario engine without network
+        run: dotnet run --project Tests/ScenarioSmokeTests.csproj -c Release
       - name: Build WPF targeting built-in .NET Framework 4.8
         run: dotnet build DailyWallpaperAI.Classic.csproj -c Release
       - name: Package Classic folder
