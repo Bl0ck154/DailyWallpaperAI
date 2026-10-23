@@ -5,9 +5,9 @@ installed, locally signed-in** `codex-imagegen-cli` helper. **No API key is
 stored in this app**, and it does not read Codex auth files or tokens.
 
 This source project is independent of WallTrek/WinUI. It targets .NET 10/WPF
-and uses no external NuGet packages. It is **not a validated Windows release**:
-Windows compilation and live ChatGPT image generation cannot be verified in
-this environment. GitHub Actions configuration is included for build checks.
+and uses no external NuGet packages. The Windows CI builds both Lite and Portable packages and runs offline scenario tests.
+**Live GUI/Codex generation has not been validated yet**; published versions are
+marked Alpha until real Windows acceptance tests pass.
 
 ## Features implemented
 
@@ -20,7 +20,8 @@ this environment. GitHub Actions configuration is included for build checks.
 - Validate PNG output and archive it under `Pictures/DailyWallpaperAI`.
 - Optional Windows background update through `SystemParametersInfo`.
 - Optional daily automation via Windows Task Scheduler (`--scheduled`).
-- Portable self-contained publish target. Close-to-tray is optional.
+- Separate Lite (framework-dependent) and Portable (self-contained) publish targets.
+- Close-to-tray is optional.
 - No SQLite, server, analytics, DeviantArt, video, or cloud secrets vault.
 
 ## Requirements
@@ -33,6 +34,21 @@ this environment. GitHub Actions configuration is included for build checks.
   It is an unofficial alpha package that requires Python/uv and **file-based
   Codex authentication**. Its underlying ChatGPT endpoints are undocumented,
   availability is account-dependent, and usage limits apply.
+
+## Download an alpha Windows build
+
+Use the [GitHub Releases page](https://github.com/Bl0ck154/DailyWallpaperAI/releases).
+The two builds have the **same features**:
+
+- **Lite** (`DailyWallpaperAI-Lite-win-x64.zip`): smaller download; install the
+  [Microsoft .NET 10 Desktop Runtime for Windows x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) first.
+- **Portable** (`DailyWallpaperAI-Portable-win-x64.zip`): larger download, includes
+  the .NET runtime; no separate .NET installation required.
+
+Extract the entire ZIP to a writable directory such as
+`%USERPROFILE%\\Apps\\DailyWallpaperAI` and run `DailyWallpaperAI.exe`.
+Neither edition includes Codex or the separately installed image helper; follow
+**Image helper setup** below. Do not launch directly inside the ZIP.
 
 ## Build and run on Windows
 
@@ -107,6 +123,18 @@ consent apply. A successful image is saved in the Gallery; an older image may be
 selected and deleted after confirmation. The most recently generated wallpaper is
 protected from accidental deletion.
 
-**Project status:** Windows CI verifies compilation and offline scenario behavior.
-Neither successful compilation nor a mock test establishes live Codex generation;
-that requires the installed helper and a signed-in Windows user.
+**Project status:** Windows CI verifies compilation, offline scenario behavior and both
+packaging flavours. The GitHub Release is a prerelease, not a production-ready
+version. Neither compilation nor mocked tests establish live Codex generation;
+that requires the separately installed helper and a signed-in Windows user.
+
+## Making a GitHub alpha release
+
+The [Windows workflow](.github/workflows/windows-build.yml) runs on pushes to
+`main` and uploads both packages as temporary Actions artifacts. To publish
+versioned, durable downloads, run it manually via **Actions → Windows WPF build
+and alpha release → Run workflow**, choose `main`, enter a new
+`release_tag` such as `v0.1.0-alpha.1`, and submit. A release is created **only
+if** scenario tests, WPF build and both Windows packages succeed. Tags must be
+unique. Notes come from [the alpha release notes](docs/ALPHA_RELEASE_NOTES.md).
+
