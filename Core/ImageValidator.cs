@@ -1,5 +1,3 @@
-using System.Buffers.Binary;
-
 namespace DailyWallpaperAI.Core;
 
 public static class ImageValidator
@@ -13,10 +11,10 @@ public static class ImageValidator
             throw new InvalidDataException("Image generator returned an invalid or oversized PNG.");
         var bytes = File.ReadAllBytes(path);
         if (bytes.Length < 57 ||
-            !bytes.AsSpan(0, 8).SequenceEqual(PngSignature))
+            !bytes.Take(8).SequenceEqual(PngSignature))
             throw new InvalidDataException("Image generator did not produce a valid PNG.");
-        var width = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(16, 4));
-        var height = BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(20, 4));
+        uint width = ReadBigEndian(bytes, 16);
+        uint height = ReadBigEndian(bytes, 20);
         if (width == 0 || height == 0 || width > 8192 || height > 8192 ||
             (long)width * height > 36_000_000)
             throw new InvalidDataException("Generated image dimensions are invalid.");
@@ -28,4 +26,7 @@ public static class ImageValidator
         if (decoder.Frames.Count == 0 || decoder.Frames[0].PixelWidth != width || decoder.Frames[0].PixelHeight != height)
             throw new InvalidDataException("Generated image failed decoding.");
     }
+    private static uint ReadBigEndian(byte[] bytes, int offset) =>
+        ((uint)bytes[offset] << 24) | ((uint)bytes[offset + 1] << 16) |
+        ((uint)bytes[offset + 2] << 8) | bytes[offset + 3];
 }
