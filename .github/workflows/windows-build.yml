@@ -1,0 +1,27 @@
+name: Windows WPF build and smoke tests
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Scenario tests (offline, no credentials)
+        run: dotnet run --project Tests/ScenarioSmokeTests.csproj --configuration Release
+      - name: Build WPF application
+        run: dotnet build DailyWallpaperAI.csproj --configuration Release
+      - name: Publish standalone Windows folder
+        run: dotnet publish DailyWallpaperAI.csproj -c Release -r win-x64 --self-contained true -p:PublishTrimmed=false -o dist/DailyWallpaperAI
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DailyWallpaperAI-Windows-x64
+          path: dist/DailyWallpaperAI/
+          if-no-files-found: error
+          retention-days: 7
