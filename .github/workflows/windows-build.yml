@@ -26,6 +26,10 @@ jobs:
       - name: Scenario tests (offline, no credentials)
         run: dotnet run --project Tests/ScenarioSmokeTests.csproj --configuration Release
 
+      - name: Verify navigation and button contrast invariants
+        shell: pwsh
+        run: ./Tests/UiContract.ps1
+
       - name: Build WPF application
         run: dotnet build DailyWallpaperAI.csproj --configuration Release
 

@@ -41,22 +41,31 @@
       <Setter Property="Foreground" Value="{StaticResource Muted}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Margin" Value="0,0,0,5"/>
+      <Setter Property="Height" Value="51"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="TabItem">
             <Border x:Name="NavBorder" Background="Transparent" CornerRadius="11"
-                    BorderBrush="Transparent" BorderThickness="1" Padding="17,14">
-              <ContentPresenter ContentSource="Header" HorizontalAlignment="Stretch"/>
+                    BorderBrush="Transparent" BorderThickness="1" Padding="17,14"
+                    SnapsToDevicePixels="True">
+              <TextBlock Text="{TemplateBinding Header}"
+                         Foreground="{TemplateBinding Foreground}"
+                         FontWeight="{TemplateBinding FontWeight}"
+                         FontSize="{TemplateBinding FontSize}"
+                         TextWrapping="NoWrap" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="NavBorder" Property="Background" Value="#273329"/>
-                <Setter TargetName="NavBorder" Property="BorderBrush" Value="#41563C"/>
-                <Setter Property="Foreground" Value="{StaticResource Accent}"/>
-              </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="NavBorder" Property="Background" Value="#262E37"/>
+                <Setter TargetName="NavBorder" Property="Background" Value="#303B49"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+              </Trigger>
+              <!-- Keep selected state above hover, with unchanged border width. -->
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="NavBorder" Property="Background" Value="#29382B"/>
+                <Setter TargetName="NavBorder" Property="BorderBrush" Value="#60814B"/>
+                <Setter Property="Foreground" Value="{StaticResource Accent}"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -65,6 +74,14 @@
     </Style>
     <Style x:Key="ShellTabs" TargetType="TabControl">
       <Setter Property="ItemContainerStyle" Value="{StaticResource NavItem}"/>
+      <!-- Never use TabPanel here: it rearranges selected tab rows on selection. -->
+      <Setter Property="ItemsPanel">
+        <Setter.Value>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Vertical"/>
+          </ItemsPanelTemplate>
+        </Setter.Value>
+      </Setter>
       <Setter Property="Background" Value="{StaticResource Bg}"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Template">
@@ -97,7 +114,7 @@
                                Foreground="{StaticResource Muted}" FontSize="11" Margin="0,7,0,0"/>
                     <TextBlock Text="ALPHA • v0.1" Foreground="#687584" FontSize="10" Margin="0,22,0,0"/>
                   </StackPanel>
-                  <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1"/>
+                  <ItemsPresenter KeyboardNavigation.TabIndex="1"/>
                 </DockPanel>
               </Border>
               <Border Grid.Column="1" Background="{StaticResource Bg}">
@@ -123,14 +140,14 @@
         <Setter.Value>
           <ControlTemplate TargetType="ListBoxItem">
             <Border x:Name="TileBorder" Background="{TemplateBinding Background}"
-                    BorderBrush="{StaticResource Stroke}" BorderThickness="1" CornerRadius="13"
-                    Padding="7">
+                    BorderBrush="{StaticResource Stroke}" BorderThickness="2" CornerRadius="13"
+                    Padding="6">
               <ContentPresenter/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsSelected" Value="True">
                 <Setter TargetName="TileBorder" Property="BorderBrush" Value="{StaticResource Accent}"/>
-                <Setter TargetName="TileBorder" Property="BorderThickness" Value="2"/>
+                <!-- Stable thickness avoids thumbnail reflow. -->
               </Trigger>
               <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="TileBorder" Property="Background" Value="{StaticResource Panel2}"/>
@@ -147,7 +164,7 @@
       <RowDefinition Height="*"/>
       <RowDefinition Height="46"/>
     </Grid.RowDefinitions>
-    <TabControl x:Name="Tabs" Grid.Row="0" Style="{StaticResource ShellTabs}" SelectionChanged="Tabs_SelectionChanged">
+    <TabControl x:Name="Tabs" Grid.Row="0" Style="{StaticResource ShellTabs}" TabStripPlacement="Left" SelectionChanged="Tabs_SelectionChanged">
 
       <TabItem Header="⌂   Overview">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

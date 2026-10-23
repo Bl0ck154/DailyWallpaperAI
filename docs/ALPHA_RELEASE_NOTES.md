@@ -1,24 +1,18 @@
-# Daily Wallpaper AI — Alpha
+# Daily Wallpaper AI — Alpha 3 (UI stability)
 
-First test release of a standalone Windows 10/11 x64 wallpaper generator built with .NET 10 / WPF.
+## Main changes
+- **Navigation fixed:** replace WPF TabPanel with a plain vertical items stack; tab selection no longer causes selected-row reordering.
+- Sidebar width and row heights stay constant across tab changes. Selected/hover states keep the same padding and border thickness.
+- **Button text fixed:** button templates explicitly bind their label foreground to the Button's Foreground property, overriding the global TextBlock styling that caused white-on-lime primary labels.
+- Contrast pass for primary (lime with dark text), secondary (blue-gray with white text) and destructive (dark burgundy with pale pink text) controls.
+- Gallery tiles keep a constant border width to prevent selection-related size changes.
+- CI runs static UI layout contract checks and builds both Windows variants.
 
-## Which package?
-- **DailyWallpaperAI-Lite-win-x64.zip** — small application bundle; requires [Microsoft .NET 10 Desktop Runtime (Windows x64)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0).
-- **DailyWallpaperAI-Portable-win-x64.zip** — larger self-contained bundle; no separate .NET Desktop Runtime required.
+## Packages
+- **Lite:** smallest download; requires [Microsoft .NET 10 Desktop Runtime x64](https://dotnet.microsoft.com/en-us/download/dotnet/10.0).
+- **Portable:** includes the .NET 10 Desktop Runtime; a much larger download.
 
-Extract **all files** from your chosen ZIP into a writable folder (for example `%USERPROFILE%\Apps\DailyWallpaperAI`), then launch `DailyWallpaperAI.exe`. These are portable folders, not installers. Do not run directly from the ZIP.
+Extract every file, then launch `DailyWallpaperAI.exe`. To generate images you must separately install the unofficial `codex-imagegen-cli` helper and have file-based local Codex ChatGPT authorization. The helper uses undocumented endpoints that may change; neither package includes tokens.
 
-## Features
-- Simple WPF window with Home, Scenarios, Gallery and Settings
-- One-off prompts and reusable scenarios with rotating location/mood combinations
-- Optional 1–5 reference photos (explicit upload consent is required)
-- Manual generation, cancellation, local image archive, restore/delete from Gallery
-- Optional static Windows wallpaper update, tray and a daily task via Windows Task Scheduler
-
-## Required for generation — BOTH packages
-The third-party [codex-imagegen-cli](https://github.com/jdmnk/codex-imagegen-cli) helper must be installed separately and accessible in the same Windows user's PATH (or chosen in Settings). It requires a supported local **file-based Codex/ChatGPT login**; it uses undocumented endpoints, has usage limits and is not an official OpenAI image API. No Codex session files, auth tokens, photos or other credentials are included in this release.
-
-## Important alpha limitations
-CI validates compilation and offline scenario tests **only**. Live image generation, GUI, tray behaviour and Windows Task Scheduler have **not** yet been exercised on the owner's PC. Daily scheduling does not wake a sleeping/off computer; missed-run catch-up and cross-process consistency need more testing. Image generation capability is not guaranteed by a successful Codex login.
-
-Please test with a disposable prompt and reference image first. If generation fails, the app should keep the previous desktop wallpaper. See [release validation issue #1](https://github.com/Bl0ck154/DailyWallpaperAI/issues/1), [scheduler issue #2](https://github.com/Bl0ck154/DailyWallpaperAI/issues/2), [privacy issue #3](https://github.com/Bl0ck154/DailyWallpaperAI/issues/3). This is an **alpha prerelease, not a stable release**.
+## Alpha limitations
+Windows CI verifies XAML/C# compilation and offline smoke tests; it does **not** constitute live visual testing of window behavior, tray/scheduling, or Codex image generation. Please test on a real Windows desktop and report issues with a screenshot.

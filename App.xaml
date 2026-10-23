@@ -5,10 +5,10 @@
     <SolidColorBrush x:Key="Bg" Color="#0D1014"/>
     <SolidColorBrush x:Key="Side" Color="#11161C"/>
     <SolidColorBrush x:Key="Panel" Color="#191F27"/>
-    <SolidColorBrush x:Key="Panel2" Color="#252C36"/>
+    <SolidColorBrush x:Key="Panel2" Color="#344153"/>
     <SolidColorBrush x:Key="Fg" Color="#F6F8FA"/>
-    <SolidColorBrush x:Key="Muted" Color="#9AA5B4"/>
-    <SolidColorBrush x:Key="Stroke" Color="#303944"/>
+    <SolidColorBrush x:Key="Muted" Color="#AEBCCB"/>
+    <SolidColorBrush x:Key="Stroke" Color="#526073"/>
     <SolidColorBrush x:Key="Accent" Color="#D6FB82"/>
     <SolidColorBrush x:Key="AccentFg" Color="#111913"/>
 
@@ -22,49 +22,61 @@
       <Setter Property="Foreground" Value="{StaticResource Fg}"/>
       <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
+    <!-- Always draw text using the *button's* foreground.
+         The global TextBlock style used to turn primary labels white on lime. -->
+    <ControlTemplate x:Key="HighContrastButtonTemplate" TargetType="Button">
+      <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}"
+              Padding="{TemplateBinding Padding}" CornerRadius="11"
+              SnapsToDevicePixels="True">
+        <TextBlock Text="{TemplateBinding Content}"
+                   Foreground="{TemplateBinding Foreground}"
+                   FontFamily="{TemplateBinding FontFamily}"
+                   FontSize="{TemplateBinding FontSize}"
+                   FontWeight="{TemplateBinding FontWeight}"
+                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+      </Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.88"/>
+        </Trigger>
+        <Trigger Property="IsPressed" Value="True">
+          <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.75"/>
+        </Trigger>
+        <Trigger Property="IsKeyboardFocused" Value="True">
+          <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{StaticResource Accent}"/>
+        </Trigger>
+        <Trigger Property="IsEnabled" Value="False">
+          <Setter TargetName="ButtonSurface" Property="Opacity" Value="0.55"/>
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+
     <Style TargetType="Button">
-      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
-      <Setter Property="Background" Value="{StaticResource Panel2}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Stroke}"/>
+      <Setter Property="Foreground" Value="#F9FCFF"/>
+      <Setter Property="Background" Value="#344153"/>
+      <Setter Property="BorderBrush" Value="#788CA6"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="16,11"/>
+      <Setter Property="Padding" Value="17,11"/>
       <Setter Property="Margin" Value="0,0,9,0"/>
       <Setter Property="Cursor" Value="Hand"/>
-      <Setter Property="MinHeight" Value="43"/>
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Shell" Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="10" Padding="{TemplateBinding Padding}">
-              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                RecognizesAccessKey="True"/>
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Shell" Property="Opacity" Value="0.86"/>
-              </Trigger>
-              <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="Shell" Property="Opacity" Value="0.7"/>
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="Shell" Property="Opacity" Value="0.42"/>
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Template" Value="{StaticResource HighContrastButtonTemplate}"/>
     </Style>
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
       <Setter Property="Background" Value="{StaticResource Accent}"/>
-      <Setter Property="Foreground" Value="{StaticResource AccentFg}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Foreground" Value="#101810"/>
+      <Setter Property="BorderBrush" Value="#D6FB82"/>
+      <Setter Property="FontWeight" Value="Bold"/>
     </Style>
     <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-      <Setter Property="Foreground" Value="#FFB8B9"/>
-      <Setter Property="BorderBrush" Value="#6F3A44"/>
+      <Setter Property="Background" Value="#472C36"/>
+      <Setter Property="Foreground" Value="#FFE1E4"/>
+      <Setter Property="BorderBrush" Value="#B87386"/>
     </Style>
 
     <Style TargetType="TextBox">
